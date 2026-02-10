@@ -1,0 +1,32 @@
+{
+  "users": {
+    "validUser": {
+      "email": "test@example.com",
+      "password": "password123",
+      "name": "Test User"
+    },
+    "invalidUser": {
+      "email": "invalid@example.com",
+      "password": "wrongpassword"
+    }
+  },
+  "dashboard": {
+    "expectedSections": [
+      "Stats Widget",
+      "Recent Activity",
+      "Quick Actions"
+    ]
+  },
+  "reports": {
+    "searchQueries": [
+      "monthly",
+      "quarterly",
+      "annual"
+    ],
+    "exportFormats": [
+      "csv",
+      "pdf",
+      "xlsx"
+    ]
+  }
+}

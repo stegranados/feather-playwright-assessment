@@ -1,0 +1,99 @@
+name: Playwright Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run tests on'
+        required: true
+        default: 'main'
+        type: string
+      test_case:
+        description: 'Test case file to run (e.g. login.spec.ts). Leave empty to run all tests'
+        required: false
+        type: string
+      workers:
+        description: 'Number of parallel workers (default: 1)'
+        required: false
+        default: '1'
+        type: string
+      retries:
+        description: 'Number of retries for failed tests'
+        required: false
+        default: '2'
+        type: string
+
+  # Uncomment below to enable scheduled runs
+  # schedule:
+  #   - cron: "0 3 * * *"  # Every day at 3:00 AM UTC
+  #
+  # Cron syntax: "minute hour day-of-month month day-of-week"
+  # Examples:
+  #   "0 3 * * *"     - Every day at 3:00 AM UTC
+  #   "0 */6 * * *"   - Every 6 hours
+  #   "0 9 * * 1-5"   - Every weekday at 9:00 AM UTC
+  #   "0 0 1 * *"     - First day of every month at midnight UTC
+
+jobs:
+  playwright-tests:
+    timeout-minutes: 180
+    runs-on: ubuntu-latest
+
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright tests
+        run: |
+          if [ -n "${{ github.event.inputs.test_case }}" ]; then
+            npx playwright test ${{ github.event.inputs.test_case }} \
+              --workers=${{ github.event.inputs.workers || '1' }} \
+              --retries=${{ github.event.inputs.retries || '2' }}
+          else
+            npx playwright test \
+              --workers=${{ github.event.inputs.workers || '1' }} \
+              --retries=${{ github.event.inputs.retries || '2' }}
+          fi
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
