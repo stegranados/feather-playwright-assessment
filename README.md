@@ -87,29 +87,23 @@ Reusable classes focused on single functionality:
 
 ```typescript
 import { applyMixins } from '../lib/core/apply-mixins';
-import { NavigationMixin, TableMixin } from '../lib/mixins';
+import { FormMixin } from '../lib/mixins';
 
-export class DashboardPage {
-  constructor(protected page: Page) {}
-  // Dashboard-specific methods only
+export class LoginPage {
+  constructor(protected readonly page: Page) {}
+  // Page-specific locators and actions
 }
 
-export interface DashboardPage extends NavigationMixin, TableMixin {}
-applyMixins(DashboardPage, [NavigationMixin, TableMixin]);
+export interface LoginPage extends FormMixin {}
+applyMixins(LoginPage, [FormMixin]);
 ```
 
 ### Using in Tests
 
 ```typescript
-test('should navigate and display data', async ({ dashboardPage }) => {
-  await dashboardPage.navigate();
-  
-  // NavigationMixin method
-  await dashboardPage.nav_clickSettings();
-  
-  // TableMixin method
-  const rowCount = await dashboardPage.table_getRowCount();
-  expect(rowCount).toBeGreaterThan(0);
+test('shows login UI', async ({ loginPage }) => {
+  await loginPage.navigate();
+  await expect(loginPage.btnLogIn).toBeVisible();
 });
 ```
 
