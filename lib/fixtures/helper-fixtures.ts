@@ -1,15 +1,16 @@
-import { test as base } from '@playwright/test';
+import { test as base, type ConsoleMessage, type Request, type Response } from '@playwright/test';
 import * as fs from 'fs';
 import { attachment } from 'allure-js-commons';
 import logger from '../utils/logger';
 
-interface HelperFixtures {
+export interface HelperFixtures {
   waitForPageLoad: () => Promise<void>;
   saveAttachments: void;
   saveBrowserVersion: void;
 }
 
 const log = logger({ filename: __filename });
+const SLOW_RESPONSE_THRESHOLD_MS = 3000;
 
 export const test = base.extend<HelperFixtures>({
   waitForPageLoad: async ({ page }, use) => {
@@ -23,16 +24,89 @@ export const test = base.extend<HelperFixtures>({
   },
 
   /**
-   * Auto-captures console logs and screenshots on test failure.
+   * Auto-captures runtime diagnostics for flake analysis and screenshots on failure.
    */
   saveAttachments: [
     async ({ page }, use, testInfo) => {
       const logs: string[] = [];
-      page.on('console', (msg) => {
-        logs.push(`${msg.type()}: ${msg.text()}`);
-      });
+      const consoleErrors: string[] = [];
+      const pageErrors: string[] = [];
+      const networkIssues: string[] = [];
+      const slowResponses: string[] = [];
+      const requestStartTimes = new Map<Request, number>();
+
+      const onConsole = (msg: ConsoleMessage) => {
+        const entry = `${msg.type()}: ${msg.text()}`;
+        logs.push(entry);
+        if (msg.type() === 'error' || msg.type() === 'warning') {
+          consoleErrors.push(`[${msg.type()}] ${msg.text()}`);
+        }
+      };
+
+      const onPageError = (error: Error) => {
+        pageErrors.push(error.message);
+      };
+
+      const onRequest = (request: Request) => {
+        requestStartTimes.set(request, Date.now());
+      };
+
+      const onResponse = (response: Response) => {
+        const request = response.request();
+        const start = requestStartTimes.get(request);
+        if (start !== undefined) {
+          requestStartTimes.delete(request);
+        }
+
+        const durationMs = start !== undefined ? Date.now() - start : undefined;
+        const status = response.status();
+        if (status >= 400 || status === 0) {
+          networkIssues.push(`${request.method()} ${status} ${response.url()}`);
+        }
+        if (durationMs !== undefined && durationMs > SLOW_RESPONSE_THRESHOLD_MS) {
+          slowResponses.push(`${durationMs}ms ${request.method()} ${status} ${response.url()}`);
+        }
+      };
+
+      page.on('console', onConsole);
+      page.on('pageerror', onPageError);
+      page.on('request', onRequest);
+      page.on('response', onResponse);
 
       await use();
+
+      page.off('console', onConsole);
+      page.off('pageerror', onPageError);
+      page.off('request', onRequest);
+      page.off('response', onResponse);
+
+      if (consoleErrors.length > 0) {
+        await testInfo.attach('console-errors', {
+          body: Buffer.from(consoleErrors.join('\n')),
+          contentType: 'text/plain',
+        });
+      }
+
+      if (pageErrors.length > 0) {
+        await testInfo.attach('page-errors', {
+          body: Buffer.from(pageErrors.join('\n')),
+          contentType: 'text/plain',
+        });
+      }
+
+      if (networkIssues.length > 0) {
+        await testInfo.attach('network-issues', {
+          body: Buffer.from(networkIssues.join('\n')),
+          contentType: 'text/plain',
+        });
+      }
+
+      if (slowResponses.length > 0) {
+        await testInfo.attach('slow-responses', {
+          body: Buffer.from(slowResponses.join('\n')),
+          contentType: 'text/plain',
+        });
+      }
 
       if (testInfo.status !== testInfo.expectedStatus) {
         log.error('Test failed - capturing artifacts', {

@@ -3,78 +3,124 @@ import { applyMixins } from '../lib/core/apply-mixins';
 import { FormMixin } from '../lib/mixins';
 
 /**
- * Login page object.
- * Composes: FormMixin
+ * Feathr login (staging) page object.
+ * Composes: FormMixin — use `form_*` helpers when they match; prefer page-specific locators below for Feathr UI.
  */
 export class LoginPage {
-  constructor(protected page: Page) {}
+  constructor(protected readonly page: Page) { }
 
-  // Page-specific locators
+  /* Page locators (captured from Feathr login UI) */
 
-  get loginHeading(): Locator {
-    return this.page.getByRole('heading', { name: /sign in|log in|login/i });
+  get inpInput(): Locator {
+    return this.page.locator('#feathr-email-input');
   }
 
-  get emailInput(): Locator {
-    return this.page.getByRole('textbox', { name: /email/i });
-  }
-
+  /** Password field — accessible name may need tuning if the app copy changes. */
   get passwordInput(): Locator {
-    return this.page.locator('input[type="password"]').first();
+    return this.page.getByRole('textbox', { name: 'Password Forgot password?' });
   }
 
-  get loginButton(): Locator {
-    return this.page.getByRole('button', { name: /sign in|log in|login/i });
+  get btnLogIn(): Locator {
+    return this.page.getByRole('button', { name: 'Log in', exact: true });
   }
 
-  get forgotPasswordLink(): Locator {
-    return this.page.getByRole('link', { name: /forgot password/i });
+  get lblWelcomeToTheNonprofitMarketingPlatform(): Locator {
+    return this.page.getByText('Welcome to the nonprofit marketing platform!', {
+      exact: true,
+    });
   }
 
-  get signUpLink(): Locator {
-    return this.page.getByRole('link', { name: /sign up|register/i });
+  /** Shown after password when MFA / email OTP is required — tune name regex if Feathr copy changes. */
+  get inpOtp(): Locator {
+    return this.page.getByRole('textbox', {
+      name: /one-time password|verification code|authentication code/i,
+    });
   }
 
-  get errorMessage(): Locator {
-    return this.page.getByText(/invalid|error|incorrect|failed/i);
+  /** `href="/"` in DOM; prefer accessible name over hashed CSS classes. */
+  get lnkBackToLogin(): Locator {
+    return this.page.getByRole('link', { name: 'Back to login', exact: true });
   }
 
-  // Page-specific actions
+  /** Next to “Didn’t receive the code?” on the OTP step. */
+  get lnkResendCode(): Locator {
+    return this.page.getByText('Resend code', { exact: true });
+  }
+
+  /** OTP step validation error (plain text in a `div`; hashed classes are unstable — match copy). */
+  get msgOtpExpiredOrIncorrect(): Locator {
+    return this.page.getByText('Your one-time password is expired or incorrect', {
+      exact: true,
+    });
+  }
+
+  /** Optional follow-up line under {@link msgOtpExpiredOrIncorrect}. */
+  get msgOtpErrorFollowUp(): Locator {
+    return this.page.getByText('Check your email for a new one-time password.', {
+      exact: true,
+    });
+  }
+
+  /* Navigation */
 
   async navigate(): Promise<void> {
-    await this.page.goto('/login');
-    await expect(this.loginHeading).toBeVisible();
+    await this.page.goto('/');
+    await expect(this.lblWelcomeToTheNonprofitMarketingPlatform).toBeVisible();
   }
 
+  /* Actions */
+
+  async enterInput(value: string): Promise<void> {
+    await this.inpInput.fill(value);
+  }
+
+  async typeOnPasswordInput(value: string): Promise<void> {
+    await this.passwordInput.fill(value);
+  }
+
+  async clickLogIn(): Promise<void> {
+    await this.btnLogIn.click();
+  }
+
+  async isWelcomeToTheNonprofitMarketingPlatformVisible(): Promise<boolean> {
+    return await this.lblWelcomeToTheNonprofitMarketingPlatform.isVisible();
+  }
+
+  /** Fills email + password and submits — uses Feathr-specific locators above. */
   async login(email: string, password: string): Promise<void> {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
-    await this.loginButton.click();
+    await this.enterInput(email);
+    await this.typeOnPasswordInput(password);
+    await this.clickLogIn();
   }
 
-  async clickForgotPassword(): Promise<void> {
-    await this.forgotPasswordLink.click();
+  async enterOtp(code: string): Promise<void> {
+    await this.inpOtp.fill(code);
   }
 
-  async clickSignUp(): Promise<void> {
-    await this.signUpLink.click();
+  /** Submits the OTP step (button label may be Verify, Continue, etc.). */
+  async submitOtpStep(): Promise<void> {
+    await this.page.getByRole('button', { name: /verify|continue|submit|confirm/i }).first().click();
   }
 
-  // Page-specific assertions
-
-  async isErrorVisible(): Promise<boolean> {
-    return await this.errorMessage.isVisible();
+  async clickBackToLogin(): Promise<void> {
+    await this.lnkBackToLogin.click();
   }
 
-  async getErrorText(): Promise<string> {
-    return (await this.errorMessage.textContent()) || '';
+  async clickResendCode(): Promise<void> {
+    await this.lnkResendCode.click();
   }
 
-  async waitForLoginSuccess(expectedPath = '/dashboard'): Promise<void> {
-    await this.page.waitForURL(new RegExp(expectedPath));
+  /** Whether the OTP error banner is currently visible. */
+  async isOtpErrorVisible(): Promise<boolean> {
+    return await this.msgOtpExpiredOrIncorrect.isVisible();
+  }
+
+  /** Fails the assertion if the OTP error banner is not shown. */
+  async assertOtpErrorVisible(): Promise<void> {
+    await expect(this.msgOtpExpiredOrIncorrect).toBeVisible();
   }
 }
 
 // eslint-disable-next-line no-redeclare
-export interface LoginPage extends FormMixin {}
+export interface LoginPage extends FormMixin { }
 applyMixins(LoginPage, [FormMixin]);

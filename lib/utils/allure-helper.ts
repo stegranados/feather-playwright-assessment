@@ -1,4 +1,5 @@
 import * as allure from 'allure-js-commons';
+import { test } from '@playwright/test';
 
 interface TestMetadata {
   displayName?: string;
@@ -11,10 +12,16 @@ interface TestMetadata {
   owner?: string;
 }
 
+type StepDetails = string | Record<string, unknown>;
+
 /**
  * Allure reporting utilities for test metadata and attachments.
  */
 export class AllureHelper {
+  static manualStepTitle(stepNumber: number, title: string): string {
+    return `[Step ${stepNumber}] ${title}`;
+  }
+
   /**
    * Applies test metadata to the current Allure report.
    */
@@ -81,13 +88,29 @@ export class AllureHelper {
   }
 
   /**
-   * Creates a step in the Allure report.
+   * Creates a Playwright step that is also visible in Allure.
    */
   static async step<T>(
     name: string,
-    action: () => Promise<T>
+    action: () => Promise<T>,
+    details?: StepDetails
   ): Promise<T> {
-    return await allure.step(name, action);
+    return await test.step(name, async () => {
+      await this.attachStepDetails(name, details);
+      return action();
+    });
+  }
+
+  /**
+   * Creates a numbered Playwright step for flake reporting and attaches optional context to Allure.
+   */
+  static async manualStep<T>(
+    stepNumber: number,
+    title: string,
+    action: () => Promise<T>,
+    details?: StepDetails
+  ): Promise<T> {
+    return this.step(this.manualStepTitle(stepNumber, title), action, details);
   }
 
   /**
@@ -113,5 +136,22 @@ export class AllureHelper {
    */
   static async addTestCase(id: string): Promise<void> {
     await allure.tms(id, `Test Case ${id}`);
+  }
+
+  private static async attachStepDetails(
+    stepName: string,
+    details?: StepDetails
+  ): Promise<void> {
+    if (!details) {
+      return;
+    }
+
+    const attachmentName = `${stepName} details`;
+    if (typeof details === 'string') {
+      await this.attachText(attachmentName, details);
+      return;
+    }
+
+    await this.attachJson(attachmentName, details);
   }
 }

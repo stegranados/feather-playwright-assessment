@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
+import { getRuntimeEnv } from './lib/env';
 
 dotenv.config();
+const runtimeEnv = getRuntimeEnv();
 
 export default defineConfig({
   testDir: './tests',
@@ -13,6 +15,7 @@ export default defineConfig({
     ['html', { open: 'never' }],
     ['allure-playwright', { outputFolder: 'allure-results' }],
     ['list'],
+    ['./lib/reporters/flake-summary-reporter.ts'],
   ],
 
   timeout: 5 * 60 * 1000, // 5 minutes
@@ -21,12 +24,11 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: runtimeEnv.baseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
-    testIdAttribute: process.env.TEST_ID_ATTRIBUTE || 'data-testid',
-    timezoneId: process.env.TIMEZONE || 'America/Los_Angeles',
+    timezoneId: runtimeEnv.timezone,
     actionTimeout: 15000,
     navigationTimeout: 30000,
   },

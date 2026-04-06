@@ -3,74 +3,127 @@ import { applyMixins } from '../lib/core/apply-mixins';
 import { NavigationMixin, TableMixin, ModalMixin } from '../lib/mixins';
 
 /**
- * Dashboard page object.
- * Composes: NavigationMixin, TableMixin, ModalMixin
+ * Feathr dashboard / home shell page object.
+ * Composes: NavigationMixin, TableMixin, ModalMixin — plus Feathr-specific locators below.
  */
 export class DashboardPage {
-  constructor(protected page: Page) {}
+  constructor(protected readonly page: Page) {}
 
-  // Page-specific locators
+  /* Home navigation (role-based — preferred for shell actions) */
 
-  get dashboardHeading(): Locator {
-    return this.page.getByRole('heading', { name: /dashboard/i });
+  get lnkHome(): Locator {
+    return this.page.getByRole('link', { name: 'Home' });
   }
 
-  get welcomeMessage(): Locator {
-    return this.page.getByText(/welcome|hello/i);
+  get lnkDashboard(): Locator {
+    return this.page.getByRole('link', { name: 'Dashboard' });
   }
 
-  get statsWidget(): Locator {
-    return this.page.locator('[data-testid="stats-widget"]');
+  get navHomeNavigation(): Locator {
+    return this.page.getByRole('navigation', { name: 'Home navigation' });
   }
 
-  get recentActivitySection(): Locator {
-    return this.page.getByRole('region', { name: /recent activity/i });
+  /** First button inside the “Home navigation” region (e.g. sidebar / menu toggle). */
+  get btnHomeNavigation(): Locator {
+    return this.navHomeNavigation.getByRole('button');
   }
 
-  get notificationsBadge(): Locator {
-    return this.page.locator('[data-testid="notifications-badge"]');
+  get lnkAll(): Locator {
+    return this.page.getByRole('link', { name: 'All' });
   }
 
-  get quickActionsPanel(): Locator {
-    return this.page.locator('[data-testid="quick-actions"]');
+  get btnCreate(): Locator {
+    return this.page.getByRole('button', { name: 'Create' });
   }
 
-  // Page-specific actions
+  /* Earlier captures (text / layout-specific) */
 
+  /** Collapsed menu / expand control — attribute selector needs balanced quotes. */
+  get btnButton(): Locator {
+    return this.page.locator('button[aria-expanded="false"]');
+  }
+
+  get lblMarketing(): Locator {
+    return this.page.getByText('Marketing', { exact: true });
+  }
+
+  get lblAccounts(): Locator {
+    return this.page.getByText('Accounts', { exact: true });
+  }
+
+  /** Plain-text “Dashboard” — prefer {@link lnkDashboard} when matching the nav link. */
+  get lblDashboard(): Locator {
+    return this.page.getByText('Dashboard', { exact: true });
+  }
+
+  get dripCampaignButton(): Locator {
+    return this.page.getByRole('button', { name: 'Drip Send a series of' });
+  }
+
+  get txtCampaignName(): Locator {
+    return this.page.getByRole('textbox', { name: 'Campaign name' });
+  }
+
+  get headingCreateCampaign(): Locator {
+    return this.page.getByRole('heading', { name: 'Create a campaign' });
+  }
+
+  /**
+   * Opens the dashboard route. Call after login if your app requires auth.
+   * Adjust the path if Feathr uses a different URL.
+   */
   async navigate(): Promise<void> {
     await this.page.goto('/dashboard');
-    await expect(this.dashboardHeading).toBeVisible();
+    await expect(this.lnkDashboard).toBeVisible();
   }
 
-  async clickStatsWidget(): Promise<void> {
-    await this.statsWidget.click();
+  /* Actions — home shell */
+
+  async clickHomeLink(): Promise<void> {
+    await this.lnkHome.click();
   }
 
-  // Page-specific data extraction
-
-  async getWelcomeText(): Promise<string> {
-    return (await this.welcomeMessage.textContent()) || '';
+  async clickHomeNavigationButton(): Promise<void> {
+    await this.btnHomeNavigation.click();
   }
 
-  async getNotificationCount(): Promise<number> {
-    const text = await this.notificationsBadge.textContent();
-    const count = parseInt(text?.replace(/\D/g, '') || '0', 10);
-    return isNaN(count) ? 0 : count;
+  async clickAllLink(): Promise<void> {
+    await this.lnkAll.click();
   }
 
-  // Page-specific assertions
-
-  async isDashboardVisible(): Promise<boolean> {
-    return await this.dashboardHeading.isVisible();
+  async clickCreate(): Promise<void> {
+    await this.btnCreate.click();
   }
 
-  async isStatsWidgetVisible(): Promise<boolean> {
-    return await this.statsWidget.isVisible();
+  /* Actions — earlier captures */
+
+  async typeCampaignName(campaignName: string): Promise<void> {
+    await this.txtCampaignName.fill(campaignName);
   }
 
-  async waitForDashboardLoad(): Promise<void> {
-    await expect(this.dashboardHeading).toBeVisible();
-    await this.page.waitForLoadState('networkidle');
+  async isCampaignTitleVisible(): Promise<boolean> {
+    return await this.headingCreateCampaign.isVisible();
+  }
+
+  async clickButton(): Promise<void> {
+    await this.btnButton.click();
+  }
+
+  async clickMarketing(): Promise<void> {
+    await this.lblMarketing.click();
+  }
+
+  async clickAccounts(): Promise<void> {
+    await this.lblAccounts.click();
+  }
+
+  /** Clicks the “Dashboard” nav link (role-based). */
+  async clickDashboard(): Promise<void> {
+    await this.lnkDashboard.click();
+  }
+
+  async clickDripCampaignButton(): Promise<void> {
+    await this.dripCampaignButton.click();
   }
 }
 
