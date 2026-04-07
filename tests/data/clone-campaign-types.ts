@@ -4,10 +4,10 @@
  * a published campaign for every creatable type; trim or extend here without affecting creation coverage.
  */
 export const CLONE_CAMPAIGN_TYPES: { key: string }[] = [
-  // { key: 'Pixl Plus' },
-  // { key: 'Mobile Geofencing' },
-  // { key: 'Historical Geofencing' },
-  // { key: 'Search Keyword' },
+  { key: 'Pixl Plus' },
+  { key: 'Mobile Geofencing' },
+  { key: 'Historical Geofencing' },
+  { key: 'Search Keyword' },
   { key: 'Invites' },
   { key: 'Retargeting' },
   { key: 'Single Send' },
