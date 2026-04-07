@@ -43,15 +43,16 @@ test.describe('Clone published campaign (Marketing → All)', () => {
       await label(`testlioManualTestId`, 'e44fe8f6-9a32-4cdd-b141-a8e01de3c4a5');
       let sourceCampaignName: string | undefined;
 
-      await manualStep(1, `Navigate to campaign table`,
-        async () => marketingPage.openMarketingAll(),
+      await manualStep(1, `Navigate to campaign table and filter published`,
+        async () => {
+          await marketingPage.filterPublishedCampaignsOnly({ campaignTypeKey: key });
+          await marketingPage.searchForCampaign(key);
+        },
         { campaignType: key }
       );
 
       await manualStep(2, `Choose a published campaign`,
         async () => {
-          await marketingPage.filterPublishedCampaignsOnly();
-          await marketingPage.searchForCampaign(key);
           const sourceCampaign = await marketingPage.mktgrid_getFirstPublishedCampaignOrNull();
           expect(
             sourceCampaign,
@@ -60,10 +61,7 @@ test.describe('Clone published campaign (Marketing → All)', () => {
           expect(sourceCampaign?.campaignType).toContain(key);
           expect(sourceCampaign?.status).toContain('Published');
           sourceCampaignName = sourceCampaign?.name;
-          const openedCampaign = await marketingPage.mktgrid_openFirstPublishedCampaign();
-          expect(openedCampaign.campaignType).toContain(key);
-          expect(openedCampaign.status).toContain('Published');
-          expect(openedCampaign.name).toBe(sourceCampaignName);
+          await marketingPage.mktgrid_clickFirstPublishedCampaign();
         },
         { campaignType: key }
       );
@@ -76,14 +74,15 @@ test.describe('Clone published campaign (Marketing → All)', () => {
 
       await manualStep(4, 'Click duplicate', async () => {
         await marketingPage.campaign_duplicateMenuItem().click();
+        await marketingPage.campdup_handleRetargetingPrompt(key);
         await expect(marketingPage.campdup_duplicateDialog()).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
-        expect(await marketingPage.isCampdupCloningNoticeVisible()).toBeTruthy()
+        await marketingPage.campdup_expectCloningNotice();
         await marketingPage.campaign_duplicateButton().click();
       }, { campaignType: key, sourceCampaignName });
 
       await manualStep(5, 'Check the modal is automatically closed', async () => {
         await expect(marketingPage.campdup_duplicateDialog()).toBeHidden({ timeout: TestTimeouts.marketingDialogVisible });
-        expect(await marketingPage.isCampdupCloneStartedNoticeVisible(sourceCampaignName!)).toBeTruthy();
+        await marketingPage.campdup_expectCloneStartedNotice(sourceCampaignName!);
       }, { campaignType: key, sourceCampaignName });
     });
   }

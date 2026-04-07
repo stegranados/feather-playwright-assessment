@@ -24,21 +24,31 @@ export class CampaignDuplicateMixin {
     return this.page.getByRole('menuitem', { name: 'Duplicate' })
   }
 
-  campdup_cloningNotice(): Locator {
-    return this.page.getByText('Cloning this campaign will')
-  }
-
-  campdup_notificationNotice(): Locator {
-    return this.page.getByText('You will receive a')
-  }
-
   campaign_duplicateButton(): Locator {
     return this.page.getByRole('button', { name: 'Duplicate' })
+  }
+
+  campdup_continueWithRetargetingButton(): Locator {
+    return this.page.getByRole('button', { name: 'Continue with Retargeting' })
   }
 
   campdup_cloneStartedNotice(sourceCampaignName: string): Locator {
     const escapedCampaignName = escapeRegExp(sourceCampaignName.trim());
     return this.page.getByText(new RegExp(`Campaign "${escapedCampaignName}[^"]*" is`, 'i'));
+  }
+
+  /**
+   * Retargeting campaigns show an intermediate prompt after clicking Duplicate.
+   * For any other campaign type this is a no-op — no extra wait is incurred.
+   */
+  async campdup_handleRetargetingPrompt(campaignType: string): Promise<void> {
+    if (campaignType !== 'Retargeting') return;
+
+    const continueBtn = this.campdup_continueWithRetargetingButton();
+    await expect(continueBtn).toBeVisible({
+      timeout: TestTimeouts.marketingDialogVisible,
+    });
+    await continueBtn.click();
   }
 
   async campdup_openFromRow(row: Locator): Promise<void> {
@@ -73,11 +83,6 @@ export class CampaignDuplicateMixin {
     }
   }
 
-  async isCampdupCloningNoticeVisible(): Promise<boolean> {
-    return (await this.campdup_cloningNotice().isVisible({ timeout: TestTimeouts.marketingDialogVisible })) && 
-    (await this.campdup_notificationNotice().isVisible({ timeout: TestTimeouts.marketingDialogVisible }));
-  }
-
   async campdup_expectCloningNotice(): Promise<void> {
     const duplicateCampaignDialog = this.campdup_duplicateDialog();
     await expect(
@@ -91,12 +96,6 @@ export class CampaignDuplicateMixin {
   async campdup_confirm(): Promise<void> {
     await this.campdup_duplicateDialog().getByRole('button', { name: /^Duplicate$/ }).click();
     await expect(this.campdup_duplicateDialog()).toBeHidden({
-      timeout: TestTimeouts.marketingDialogVisible,
-    });
-  }
-
-  async isCampdupCloneStartedNoticeVisible(sourceCampaignName: string): Promise<boolean> {
-    return this.campdup_cloneStartedNotice(sourceCampaignName).isVisible({
       timeout: TestTimeouts.marketingDialogVisible,
     });
   }

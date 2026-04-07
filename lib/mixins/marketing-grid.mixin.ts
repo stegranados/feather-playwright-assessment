@@ -129,6 +129,13 @@ export class MarketingGridMixin {
     return { name, campaignType, status };
   }
 
+  /** Click the first published row's link without re-fetching data (use after getFirstPublishedCampaignOrNull). */
+  async mktgrid_clickFirstPublishedCampaign(): Promise<void> {
+    const firstPublishedRow = this.mktgrid_publishedRows().first();
+    await expect(firstPublishedRow).toBeVisible({ timeout: TestTimeouts.marketingRowVisible });
+    await firstPublishedRow.getByRole('link').first().click();
+  }
+
   async mktgrid_openFirstPublishedCampaign(): Promise<MarketingPublishedCampaignRow> {
     const campaign = await this.mktgrid_getFirstPublishedCampaignOrNull();
     if (!campaign) {

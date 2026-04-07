@@ -28,27 +28,53 @@ export class MarketingFiltersMixin {
     const dialog = this.mktfilter_dialog();
     await dialog.getByRole('textbox', { name: fieldLabel }).click({ force: true });
 
-    // Temporary fallback until the list popup exposes stable role semantics.
+    const option = this.page.getByRole('option', { name: value, exact: true }).first();
     const menuList = this.page.locator('[class*="MenuList"], [class*="menu-list"]').last();
-    await expect(menuList).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
-    await menuList.getByText(value, { exact: true }).click();
+
+    // Auto-retry until EITHER the semantic option OR the CSS-class menu is visible.
+    await expect(option.or(menuList)).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
+
+    // Prefer the semantic option when it materialized.
+    if ((await option.isVisible().catch(() => false))) {
+      await option.scrollIntoViewIfNeeded();
+      await option.click();
+      return;
+    }
+
+    // Fallback: the CSS-class menu appeared — pick by text inside it.
+    const choice = menuList.getByText(value, { exact: true }).first();
+    await choice.scrollIntoViewIfNeeded();
+    await choice.click();
+  }
+
+  /** Pick a campaign type in the Filters dialog (dialog must already be open). */
+  async mktfilter_pickCampaignType(typeKey: string): Promise<void> {
+    await this.mktfilter_pickComboboxValue('Type', typeKey);
   }
 
   async mktfilter_selectTypeIfPresent(typeLabel: string): Promise<boolean> {
     const dialog = this.mktfilter_dialog();
     await dialog.getByRole('textbox', { name: 'Type' }).click({ force: true });
 
+    const option = this.page.getByRole('option', { name: typeLabel, exact: true }).first();
     const menuList = this.page.locator('[class*="MenuList"], [class*="menu-list"]').last();
-    await expect(menuList).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
+
+    await expect(option.or(menuList)).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
+
+    if (await option.isVisible().catch(() => false)) {
+      await option.scrollIntoViewIfNeeded();
+      await option.click();
+      return true;
+    }
 
     const typeOption = menuList.getByText(typeLabel, { exact: true });
-    const hasTypeOption = (await typeOption.count()) > 0;
-    if (!hasTypeOption) {
+    if ((await typeOption.count()) === 0) {
       await this.page.keyboard.press('Escape');
       return false;
     }
 
-    await typeOption.click();
+    await typeOption.first().scrollIntoViewIfNeeded();
+    await typeOption.first().click();
     return true;
   }
 

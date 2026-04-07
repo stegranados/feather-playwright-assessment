@@ -45,11 +45,19 @@ export class MarketingAllPage {
     await expect(this.mktgrid_grid).toBeVisible({ timeout: TestTimeouts.marketingGridVisible });
   }
 
-  async filterPublishedCampaignsOnly(): Promise<void> {
-    await this.openMarketingAll();
+  async filterPublishedCampaignsOnly(opts?: {
+    skipNavigation?: boolean;
+    campaignTypeKey?: string;
+  }): Promise<void> {
+    if (!opts?.skipNavigation) {
+      await this.openMarketingAll();
+    }
     await this.mktfilter_openDialog();
     await this.mktfilter_clearIfVisible();
     await this.mktfilter_pickComboboxValue('Status', 'Published');
+    if (opts?.campaignTypeKey) {
+      await this.mktfilter_pickCampaignType(opts.campaignTypeKey);
+    }
     await this.mktfilter_apply();
     await expect(this.mktgrid_grid).toBeVisible({ timeout: TestTimeouts.marketingGridVisible });
     await this.mktgrid_prepareAfterFiltersApplied();
@@ -134,7 +142,7 @@ export class MarketingAllPage {
 
   private async campaignConfigurePageVisible(uniqueName: string): Promise<boolean> {
     const heading = this.page.getByRole('heading', { level: 1, name: uniqueName });
-    return heading.isVisible({ timeout: 1_500 }).catch(() => false);
+    return heading.isVisible({ timeout: 0 }).catch(() => false);
   }
 
   /** Wizard may land on an editor or return to Marketing with a new row. */

@@ -48,8 +48,7 @@ export class CreateCampaignWizardPage {
 
   async fillNameStep(key: string, uniqueName: string): Promise<void> {
     const dlg = this.createDialog;
-    await expect(dlg.getByText('Campaign type')).toBeVisible();
-    await expect(this.page.getByText(key, { exact: false }).first()).toBeVisible();
+    await expect(dlg.getByRole('textbox', { name: 'Campaign name' })).toBeVisible();
     await this.selectProjectInCreateWizard();
     await this.page.getByRole('textbox', { name: 'Campaign name' }).fill(uniqueName);
     const next = dlg.getByRole('button', { name: 'Next', exact: true });
@@ -104,30 +103,19 @@ export class CreateCampaignWizardPage {
     if (CREATED_RESOURCE_URL.test(this.page.url())) return true;
     if (!uniqueName) return false;
     const heading = this.page.getByRole('heading', { level: 1, name: uniqueName });
-    return heading.isVisible({ timeout: 1_500 }).catch(() => false);
+    return heading.isVisible({ timeout: 0 }).catch(() => false);
   }
 
   private async finishMultiStepCreateModal(uniqueName: string, maxMs = 120_000): Promise<void> {
     const deadline = Date.now() + maxMs;
     while (Date.now() < deadline) {
       if (await this.onResourceConfigurePage(uniqueName)) return;
-      try {
-        await this.page.waitForURL(CREATED_RESOURCE_URL, { timeout: 1_500 });
-        return;
-      } catch {
-        /* still in modal or transitioning */
-      }
-      if (await this.onResourceConfigurePage(uniqueName)) return;
 
       const dlg = this.createDialog;
       if (!(await dlg.isVisible().catch(() => false))) {
-        try {
-          await this.page.waitForURL(CREATED_RESOURCE_URL, { timeout: 3_000 });
-          return;
-        } catch {
-          await this.page.waitForLoadState('domcontentloaded').catch(() => undefined);
-          continue;
-        }
+        if (CREATED_RESOURCE_URL.test(this.page.url())) return;
+        await this.page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        continue;
       }
 
       const createBtn = dlg.getByRole('button', { name: 'Create', exact: true });

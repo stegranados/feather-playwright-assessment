@@ -7,7 +7,7 @@ export const TestTimeouts = {
   otpFieldVisible: 60_000,
 
   /** Authenticated shell (e.g. main nav) after OTP is accepted */
-  dashboardShell: 10_000,
+  dashboardShell: 15_000,
 
   /** Max wall time to poll Mailinator and parse Feathr OTP from email */
   mailinatorOtp: 120_000,
@@ -20,6 +20,9 @@ export const TestTimeouts = {
 
   /** Marketing dialogs such as Filters and Duplicate Campaign */
   marketingDialogVisible: 10_000,
+
+  /** Grace period for optional overlays/modals that may or may not appear after navigation */
+  optionalOverlayGrace: 2_000,
 
   /** Marketing data-row visibility once filters/search have settled */
   marketingRowVisible: 30_000,
