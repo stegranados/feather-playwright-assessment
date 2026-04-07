@@ -1,10 +1,10 @@
-import { TestTimeouts } from '../lib/constants';
-import { getAuthEnv } from '../lib/env';
-import { test } from '../lib/fixtures/page-fixtures';
-import { MailinatorInbox } from '../lib/mailinator-provider';
-import { createFeathrOtpWatch } from '../lib/test-helpers/feathr-otp-watch';
-import { manualStep } from '../lib/test-helpers/manual-step';
-import { CREATABLE_CAMPAIGN_TYPES } from './data/creatable-campaign-types';
+import { TestTimeouts } from '../../lib/constants';
+import { getAuthEnv } from '../../lib/env';
+import { test } from '../../lib/fixtures/page-fixtures';
+import { MailinatorInbox } from '../../lib/mailinator-provider';
+import { createFeathrOtpWatch } from '../../lib/test-helpers/feathr-otp-watch';
+import { manualStep } from '../../lib/test-helpers/manual-step';
+import { CREATABLE_CAMPAIGN_TYPES } from '../data/creatable-campaign-types';
 
 const authEnv = getAuthEnv();
 
@@ -33,7 +33,7 @@ test.describe('Create campaign by type (Marketing → Create)', () => {
       });
     }
 
-    await page.waitForLoadState('networkidle', { timeout: TestTimeouts.otpFieldVisible });
+    await page.waitForLoadState('domcontentloaded');
   });
 
   for (const { key, namePattern } of CREATABLE_CAMPAIGN_TYPES) {

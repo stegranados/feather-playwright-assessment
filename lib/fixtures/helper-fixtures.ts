@@ -5,6 +5,7 @@ import logger from '../utils/logger';
 
 export interface HelperFixtures {
   waitForPageLoad: () => Promise<void>;
+  blockThirdPartyNoise: void;
   saveAttachments: void;
   saveBrowserVersion: void;
 }
@@ -12,16 +13,32 @@ export interface HelperFixtures {
 const log = logger({ filename: __filename });
 const SLOW_RESPONSE_THRESHOLD_MS = 3000;
 
+const BLOCKED_THIRD_PARTY_PATTERN =
+  /\.(zendesk\.com|zdassets\.com|stripe\.(com|network)|google-analytics\.com|googletagmanager\.com)\//;
+
 export const test = base.extend<HelperFixtures>({
   waitForPageLoad: async ({ page }, use) => {
     await use(async () => {
       log.debug('Waiting for page load', { url: page.url() });
       await page.waitForLoadState('load', { timeout: 60000 });
       await page.waitForLoadState('domcontentloaded', { timeout: 60000 });
-      await page.waitForLoadState('networkidle', { timeout: 60000 });
       log.debug('Page load completed');
     });
   },
+
+  /**
+   * Auto-blocks third-party scripts (Zendesk, Stripe telemetry, GA) that
+   * create continuous network chatter and prevent networkidle from resolving.
+   * These services are not under test and only add latency + flakiness.
+   */
+  blockThirdPartyNoise: [
+    async ({ page }, use) => {
+      await page.route(BLOCKED_THIRD_PARTY_PATTERN, (route) => route.abort());
+      log.debug('Blocked third-party noise routes');
+      await use();
+    },
+    { auto: true },
+  ],
 
   /**
    * Auto-captures runtime diagnostics for flake analysis and screenshots on failure.

@@ -31,3 +31,6 @@ npm-debug.log*
 # Auth state
 .auth/
 
+# MidScene.js artifacts
+midscene_run/
+

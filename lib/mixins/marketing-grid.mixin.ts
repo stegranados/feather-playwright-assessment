@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { TestTimeouts } from '../constants';
 
 const DUPLICATE_DRAFT_LABEL = /\(Clone|\(Copy/i;
+const PUBLISHED_CAMPAIGN_URL_PATTERN = /\/projects\/[^/]+\/campaigns\/[^/?#]+\/?$/;
 
 function stripCloneSuffix(displayName: string): string {
   let normalizedName = displayName.trim();
@@ -15,6 +16,16 @@ function stripCloneSuffix(displayName: string): string {
   }
 
   return normalizedName;
+}
+
+interface GridPrepareOptions {
+  clearSearch?: boolean;
+}
+
+export interface MarketingPublishedCampaignRow {
+  name: string;
+  campaignType: string;
+  status: string;
 }
 
 export class MarketingGridMixin {
@@ -34,11 +45,25 @@ export class MarketingGridMixin {
 
   mktgrid_dataRows(): Locator {
     // Temporary fallback until the product exposes stable row identity.
-    return this.page.getByRole('row', { name: /More options/ });
+    return this.mktgrid_grid.getByRole('row', { name: /More options/ });
   }
 
   mktgrid_rowByName(campaignName: string): Locator {
     return this.mktgrid_dataRows().filter({ hasText: campaignName });
+  }
+
+  mktgrid_campaignTypeChip(row: Locator): Locator {
+    return row.locator('[data-name="campaign-type-chip"]');
+  }
+
+  mktgrid_campaignStatusChip(row: Locator): Locator {
+    return row.locator('[data-name="campaign-status"]');
+  }
+
+  mktgrid_publishedRows(): Locator {
+    return this.mktgrid_dataRows().filter({
+      has: this.page.locator('[data-name="campaign-status"]', { hasText: 'Published' }),
+    });
   }
 
   mktgrid_cloneSearchStem(displayName: string): string {
@@ -68,8 +93,12 @@ export class MarketingGridMixin {
     await this.mktgrid_searchByNameInput.fill(campaignName);
   }
 
-  async mktgrid_prepareAfterFiltersApplied(): Promise<void> {
-    await this.mktgrid_clearSearchIfPresent();
+  async mktgrid_prepareAfterFiltersApplied(
+    options: GridPrepareOptions = {}
+  ): Promise<void> {
+    if (options.clearSearch ?? true) {
+      await this.mktgrid_clearSearchIfPresent();
+    }
     await this.mktgrid_showMaxRows();
     await expect(this.page.getByText('Loading...')).toBeHidden({
       timeout: TestTimeouts.marketingGridVisible,
@@ -77,15 +106,43 @@ export class MarketingGridMixin {
   }
 
   async mktgrid_getFirstPublishedCampaignRowNameOrNull(): Promise<string | null> {
-    await this.mktgrid_prepareAfterFiltersApplied();
+    const campaign = await this.mktgrid_getFirstPublishedCampaignOrNull();
+    return campaign?.name ?? null;
+  }
 
-    const row = this.mktgrid_dataRows().filter({ hasText: 'Published' }).first();
-    if (!(await row.isVisible({ timeout: TestTimeouts.marketingRowVisible }).catch(() => false))) {
+  async mktgrid_getFirstPublishedCampaignOrNull(): Promise<MarketingPublishedCampaignRow | null> {
+    await this.mktgrid_prepareAfterFiltersApplied({ clearSearch: false });
+
+    const publishedRows = this.mktgrid_publishedRows();
+    if ((await publishedRows.count()) === 0) {
+      return null;
+    }
+    const firstPublishedRow = publishedRows.first();
+    const name = (await firstPublishedRow.getByRole('link').first().innerText()).trim();
+    const campaignType = (await this.mktgrid_campaignTypeChip(firstPublishedRow).innerText()).trim();
+    const status = (await this.mktgrid_campaignStatusChip(firstPublishedRow).innerText()).trim();
+
+    if (!name) {
       return null;
     }
 
-    const rowLinkText = (await row.getByRole('link').first().innerText()).trim();
-    return rowLinkText.length > 0 ? rowLinkText : null;
+    return { name, campaignType, status };
+  }
+
+  async mktgrid_openFirstPublishedCampaign(): Promise<MarketingPublishedCampaignRow> {
+    const campaign = await this.mktgrid_getFirstPublishedCampaignOrNull();
+    if (!campaign) {
+      throw new Error('No published campaign is visible in the current Marketing grid results.');
+    }
+
+    const firstPublishedRow = this.mktgrid_publishedRows().first();
+    await expect(firstPublishedRow).toBeVisible({ timeout: TestTimeouts.marketingRowVisible });
+    await firstPublishedRow.getByRole('link').first().click();
+    await expect(this.page).toHaveURL(PUBLISHED_CAMPAIGN_URL_PATTERN, {
+      timeout: TestTimeouts.urlPathContains,
+    });
+
+    return campaign;
   }
 
   async mktgrid_countVisibleDraftCloneRowsForBaseName(baseName: string): Promise<number> {

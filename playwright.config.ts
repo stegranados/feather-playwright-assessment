@@ -7,7 +7,7 @@ const runtimeEnv = getRuntimeEnv();
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
@@ -16,6 +16,7 @@ export default defineConfig({
     ['allure-playwright', { outputFolder: 'allure-results' }],
     ['list'],
     ['./lib/reporters/flake-summary-reporter.ts'],
+    ['@midscene/web/playwright-reporter', { type: 'merged' }],
   ],
 
   timeout: 5 * 60 * 1000, // 5 minutes

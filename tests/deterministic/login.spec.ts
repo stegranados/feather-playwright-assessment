@@ -1,12 +1,12 @@
-import { TestTimeouts } from '../lib/constants';
-import { getAuthEnv } from '../lib/env';
-import { test, expect } from '../lib/fixtures/page-fixtures';
-import { MailinatorInbox } from '../lib/mailinator-provider';
-import { createFeathrOtpWatch } from '../lib/test-helpers/feathr-otp-watch';
-import { manualStep } from '../lib/test-helpers/manual-step';
-import { AllureHelper } from '../lib/utils/allure-helper';
+import { TestTimeouts } from '../../lib/constants';
+import { getAuthEnv } from '../../lib/env';
+import { test, expect } from '../../lib/fixtures/page-fixtures';
+import { MailinatorInbox } from '../../lib/mailinator-provider';
+import { createFeathrOtpWatch } from '../../lib/test-helpers/feathr-otp-watch';
+import { manualStep } from '../../lib/test-helpers/manual-step';
+import { AllureHelper } from '../../lib/utils/allure-helper';
 import { label } from 'allure-js-commons';
-import { expectUrlPathContains, waitForUrlPathContains } from '../lib/utils/url-waits';
+import { expectUrlPathContains, waitForUrlPathContains } from '../../lib/utils/url-waits';
 
 test('Successful login with a valid OTP', async ({ page, loginPage, dashboardPage }) => {
   test.slow();
@@ -83,7 +83,7 @@ test('Successful login with a valid OTP', async ({ page, loginPage, dashboardPag
   });
 
   await manualStep(9, 'Back on the app, click on the "Resend code" link', async () => {
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await otpWatch.markOtpTrigger();
     await loginPage.clickResendCode();
   });

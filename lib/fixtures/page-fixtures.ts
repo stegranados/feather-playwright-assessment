@@ -5,7 +5,7 @@ import { MarketingAllPage } from '../../page-objects/marketing-all.page';
 import { CreateCampaignWizardPage } from '../../page-objects/create-campaign-wizard.page';
 import { BillingConfigurationsPage } from '../../page-objects/billing-configurations.page';
 
-interface PageFixtures {
+export interface PageFixtures {
   loginPage: LoginPage;
   dashboardPage: DashboardPage;
   marketingPage: MarketingAllPage;

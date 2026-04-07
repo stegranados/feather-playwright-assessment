@@ -24,6 +24,13 @@ export interface MailinatorEnv {
   pollStartDelayMs?: number;
 }
 
+export interface MidsceneEnv {
+  baseUrl: string;
+  apiKey: string;
+  modelName: string;
+  modelFamily: string;
+}
+
 function readEnv(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
@@ -71,6 +78,7 @@ export function getOptionalNonNegativeIntEnv(name: string): number | undefined {
 let cachedRuntimeEnv: RuntimeEnv | undefined;
 let cachedAuthEnv: AuthEnv | undefined;
 let cachedMailinatorEnv: MailinatorEnv | undefined;
+let cachedMidsceneEnv: MidsceneEnv | undefined;
 
 export function getRuntimeEnv(): RuntimeEnv {
   if (cachedRuntimeEnv) {
@@ -115,4 +123,23 @@ export function getMailinatorEnv(): MailinatorEnv {
   };
 
   return cachedMailinatorEnv;
+}
+
+/**
+ * Validates MidScene.js AI model configuration.
+ * Only called by tests that opt into AI visual fixtures — existing tests are unaffected.
+ */
+export function getMidsceneEnv(): MidsceneEnv {
+  if (cachedMidsceneEnv) {
+    return cachedMidsceneEnv;
+  }
+
+  cachedMidsceneEnv = {
+    baseUrl: requireEnv('MIDSCENE_MODEL_BASE_URL'),
+    apiKey: requireEnv('MIDSCENE_MODEL_API_KEY'),
+    modelName: requireEnv('MIDSCENE_MODEL_NAME'),
+    modelFamily: requireEnv('MIDSCENE_MODEL_FAMILY'),
+  };
+
+  return cachedMidsceneEnv;
 }

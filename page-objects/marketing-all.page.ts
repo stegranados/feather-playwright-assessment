@@ -22,6 +22,15 @@ export class MarketingAllPage {
     await this.openMarketingAll();
   }
 
+  async searchForCampaign(name: string): Promise<void> {
+    await this.mkfilter_campaignNameSearchBar().fill(name);
+    await this.mkfilter_campaignNameSearchBar().press('Enter');
+    await expect(this.mktgrid_grid).toBeVisible({ timeout: TestTimeouts.marketingGridVisible });
+    await expect(this.page.getByText('Loading...')).toBeHidden({
+      timeout: TestTimeouts.marketingGridVisible,
+    }).catch(() => undefined);
+  }
+
   async openMarketingAll(): Promise<void> {
     await this.page.goto('/marketing/all');
     await expect(this.mktgrid_grid).toBeVisible({ timeout: TestTimeouts.marketingGridVisible });
@@ -93,6 +102,7 @@ export class MarketingAllPage {
     await this.campdup_openFromRow(publishedRow);
     await this.campdup_expectCloningNotice();
     await this.campdup_confirm();
+    await this.campdup_expectCloneStartedNotice(campaignName);
   }
 
   async expectDraftCloneCountIncreased(
@@ -172,6 +182,7 @@ export class MarketingAllPage {
   }
 }
 
+// eslint-disable-next-line no-redeclare -- declaration merging is required for applied mixins
 export interface MarketingAllPage
   extends MarketingGridMixin,
     MarketingFiltersMixin,

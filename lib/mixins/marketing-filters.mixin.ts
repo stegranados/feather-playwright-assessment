@@ -4,6 +4,10 @@ import { TestTimeouts } from '../constants';
 export class MarketingFiltersMixin {
   protected page!: Page;
 
+  mkfilter_campaignNameSearchBar(): Locator {
+    return this.page.getByRole('textbox', { name: 'Search by name...' });
+  }
+
   mktfilter_dialog(): Locator {
     return this.page.getByRole('dialog', { name: 'Filters' });
   }

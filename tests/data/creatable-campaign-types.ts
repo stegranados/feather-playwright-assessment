@@ -1,6 +1,8 @@
 /**
- * Campaign types exercised by create-campaign-by-type and clone specs.
- * Extend this list when adding new Marketing → Create flows; align `namePattern` with the visible button label.
+ * Campaign types for Marketing → Create wizard only.
+ * For cloning published campaigns, use `./clone-campaign-types` so missing published data in one env
+ * does not force changes to creation coverage.
+ * Align `namePattern` with the visible wizard button label.
  */
 export const CREATABLE_CAMPAIGN_TYPES: { key: string; namePattern: RegExp }[] = [
   { key: 'Pixl Plus', namePattern: /^Pixl Plus/ },
