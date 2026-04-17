@@ -14,7 +14,7 @@ import { manualStep } from '../../lib/test-helpers/manual-step';
  */
 const authEnv = getAuthEnv();
 
-test.describe.skip('Billing configuration management (Settings → Billing → Configurations)', () => {
+test.describe('Billing configuration management (Settings → Billing → Configurations)', () => {
   test.beforeEach(async ({ page, loginPage, dashboardPage }) => {
     const inbox = MailinatorInbox.fromEnv(authEnv.otpUsername);
     const otpWatch = await createFeathrOtpWatch(inbox);

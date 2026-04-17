@@ -34,3 +34,11 @@ npm-debug.log*
 # MidScene.js artifacts
 midscene_run/
 
+# Allure artifacts
+allure-results-visual/
+allure-report-visual/
+
+allure-results/
+allure-report/
+playwright-report/
+test-results/

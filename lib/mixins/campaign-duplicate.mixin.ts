@@ -9,6 +9,8 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const TYPES_WITH_CONTINUE_PROMPT = new Set(['Retargeting', 'Email Mapping']);
+
 export class CampaignDuplicateMixin {
   protected page!: Page;
 
@@ -28,8 +30,8 @@ export class CampaignDuplicateMixin {
     return this.page.getByRole('button', { name: 'Duplicate' })
   }
 
-  campdup_continueWithRetargetingButton(): Locator {
-    return this.page.getByRole('button', { name: 'Continue with Retargeting' })
+  campdup_continueWithButton(campaignType: string): Locator {
+    return this.page.getByRole('button', { name: `Continue with ${campaignType}` });
   }
 
   campdup_cloneStartedNotice(sourceCampaignName: string): Locator {
@@ -38,13 +40,16 @@ export class CampaignDuplicateMixin {
   }
 
   /**
-   * Retargeting campaigns show an intermediate prompt after clicking Duplicate.
-   * For any other campaign type this is a no-op — no extra wait is incurred.
+   * Some campaign types (e.g. Retargeting, Email Mapping) show a "Continue with
+   * {Type}" prompt after clicking Duplicate and before the standard Duplicate
+   * Campaign dialog. For any other type this is a no-op.
+   *
+   * To support a new type, add it to `TYPES_WITH_CONTINUE_PROMPT`.
    */
-  async campdup_handleRetargetingPrompt(campaignType: string): Promise<void> {
-    if (campaignType !== 'Retargeting') return;
+  async campdup_handleContinuePrompt(campaignType: string): Promise<void> {
+    if (!TYPES_WITH_CONTINUE_PROMPT.has(campaignType)) return;
 
-    const continueBtn = this.campdup_continueWithRetargetingButton();
+    const continueBtn = this.campdup_continueWithButton(campaignType);
     await expect(continueBtn).toBeVisible({
       timeout: TestTimeouts.marketingDialogVisible,
     });

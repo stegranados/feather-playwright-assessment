@@ -4,6 +4,7 @@ import { getRuntimeEnv } from './lib/env';
 
 dotenv.config();
 const runtimeEnv = getRuntimeEnv();
+const allureResultsDir = process.env.ALLURE_RESULTS_DIR || 'allure-results';
 
 export default defineConfig({
   testDir: './tests',
@@ -13,7 +14,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['html', { open: 'never' }],
-    ['allure-playwright', { outputFolder: 'allure-results' }],
+    ['allure-playwright', { outputFolder: allureResultsDir }],
     ['list'],
     ['./lib/reporters/flake-summary-reporter.ts'],
     ['@midscene/web/playwright-reporter', { type: 'merged' }],

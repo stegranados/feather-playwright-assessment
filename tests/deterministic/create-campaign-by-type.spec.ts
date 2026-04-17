@@ -9,7 +9,7 @@ import { CREATABLE_CAMPAIGN_TYPES } from '../data/creatable-campaign-types';
 const authEnv = getAuthEnv();
 
 test.describe('Create campaign by type (Marketing → Create)', () => {
-  test.describe.configure({ mode: 'serial', timeout: TestTimeouts.marketingWizardSuite });
+  test.describe.configure({ mode: 'default', timeout: TestTimeouts.marketingWizardSuite });
 
   test.beforeEach(async ({ page, loginPage, dashboardPage }) => {
     const inbox = MailinatorInbox.fromEnv(authEnv.otpUsername);

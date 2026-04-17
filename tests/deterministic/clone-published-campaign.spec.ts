@@ -10,7 +10,7 @@ import { CLONE_CAMPAIGN_TYPES } from '../data/clone-campaign-types';
 const authEnv = getAuthEnv();
 
 test.describe('Clone published campaign (Marketing → All)', () => {
-  test.describe.configure({ mode: 'serial', timeout: TestTimeouts.marketingWizardSuite });
+  test.describe.configure({ mode: 'default', timeout: TestTimeouts.marketingWizardSuite });
 
   test.beforeEach(async ({ page, loginPage, dashboardPage }) => {
     const inbox = MailinatorInbox.fromEnv(authEnv.otpUsername);
@@ -74,7 +74,7 @@ test.describe('Clone published campaign (Marketing → All)', () => {
 
       await manualStep(4, 'Click duplicate', async () => {
         await marketingPage.campaign_duplicateMenuItem().click();
-        await marketingPage.campdup_handleRetargetingPrompt(key);
+        await marketingPage.campdup_handleContinuePrompt(key);
         await expect(marketingPage.campdup_duplicateDialog()).toBeVisible({ timeout: TestTimeouts.marketingDialogVisible });
         await marketingPage.campdup_expectCloningNotice();
         await marketingPage.campaign_duplicateButton().click();
